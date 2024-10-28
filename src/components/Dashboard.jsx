@@ -1,31 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+
 import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
   Paper,
-  Typography,
-  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField
+  Typography,
+  IconButton
 } from '@mui/material';
 import { Link } from 'react-router-dom';
+import AddIcon from '@mui/icons-material/Add';
 
 const Dashboard = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formValues, setFormValues] = useState({});
-  const [isSaving, setIsSaving] = useState(false); // State for loading during save
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -39,56 +36,16 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
     fetchStudents();
   }, []);
 
-  const handleRowClick = (student) => {
-    setSelectedStudent(student);
-    setFormValues({
-      first_name: student.first_name,
-      last_name: student.last_name,
-      birthday: student.birthday,
-      city: student.city,
-      course: student.course ? student.course.name : '',
-      teacher: student.teacher ? student.teacher.name : '',
-      sub_city: student.sub_city,
-      id_number: student.id_number
-    });
-    setIsDialogOpen(true);
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
   };
 
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setSelectedStudent(null);
-    setFormValues({}); // Clear form values when closing the dialog
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormValues({
-      ...formValues,
-      [name]: value
-    });
-  };
-
-  const handleSaveChanges = async () => {
-    setIsSaving(true); // Set loading state
-    try {
-      await axios.put(`http://127.0.0.1:3000/api/v1/students/${selectedStudent.id}`, formValues);
-      setStudents((prevStudents) =>
-        prevStudents.map((student) =>
-          student.id === selectedStudent.id ? { ...student, ...formValues } : student
-        )
-      );
-      handleDialogClose();
-    } catch (err) {
-      console.error('Error updating student:', err);
-      const message = err.response?.data?.errors?.join(', ') || 'Failed to update student information';
-      setError(message);
-    } finally {
-      setIsSaving(false); // Reset loading state
-    }
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(+event.target.value);
+    setPage(0);
   };
 
   if (loading) {
@@ -100,107 +57,60 @@ const Dashboard = () => {
   }
 
   return (
-    <div style={{ padding: '20px', backgroundColor: 'white' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <Link to="/enrollment" style={{ textDecoration: 'none' }}>
-          <Button variant="contained" color="primary">
-            Enroll New Student
-          </Button>
-        </Link>
-      </div>
-      <Paper>
-        <Table>
+    <div>
+    
+    <Paper sx={{ width: '100%', overflow: 'hidden', padding: '20px', backgroundColor: '#f5f5f5' }}>
+      <TableContainer sx={{ maxHeight: 440 }}>
+        <Table stickyHeader aria-label="students table">
           <TableHead>
             <TableRow>
-              <TableCell>First Name</TableCell>
-              <TableCell>Last Name</TableCell>
-              <TableCell>Date of Birth</TableCell>
-              <TableCell>Region</TableCell>
-              <TableCell>Course</TableCell>
-              <TableCell>Teacher</TableCell>
-              <TableCell>Sub City</TableCell>
-              <TableCell>ID Number</TableCell>
+              <TableCell colSpan={8} align="right">
+                <Link to="/enrollment" style={{ textDecoration: 'none' }}>
+                  <IconButton color="primary" size="small">
+                    <AddIcon />
+                  </IconButton>
+                </Link>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell style={{ fontWeight: 'bold' }}>First Name</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Last Name</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Date of Birth</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Region</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Course</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Teacher</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Sub City</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>ID Number</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {students.map((student) => (
-              <TableRow
-                key={student.id}
-                onClick={() => handleRowClick(student)}
-                style={{ cursor: 'pointer' }}
-              >
-                <TableCell>{student.first_name || 'N/A'}</TableCell>
-                <TableCell>{student.last_name || 'N/A'}</TableCell>
-                <TableCell>{student.birthday || 'N/A'}</TableCell>
-                <TableCell>{student.city || 'N/A'}</TableCell>
-                <TableCell>{student.course ? student.course.name : 'N/A'}</TableCell>
-                <TableCell>{student.teacher && student.teacher.name ? student.teacher.name : 'N/A'}</TableCell>
-                <TableCell>{student.sub_city || 'N/A'}</TableCell>
-                <TableCell>{student.id_number || 'N/A'}</TableCell>
-              </TableRow>
-            ))}
+            {students
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((student) => (
+                <TableRow hover role="checkbox" tabIndex={-1} key={student.id}>
+                  <TableCell>{student.first_name || 'N/A'}</TableCell>
+                  <TableCell>{student.last_name || 'N/A'}</TableCell>
+                  <TableCell>{student.birthday || 'N/A'}</TableCell>
+                  <TableCell>{student.city || 'N/A'}</TableCell>
+                  <TableCell>{student.course ? student.course.name : 'N/A'}</TableCell>
+                  <TableCell>{student.teacher ? student.teacher.name : 'N/A'}</TableCell>
+                  <TableCell>{student.sub_city || 'N/A'}</TableCell>
+                  <TableCell>{student.id_number || 'N/A'}</TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
-      </Paper>
-      <Dialog open={isDialogOpen} onClose={handleDialogClose}>
-        <DialogTitle>Edit Student Information</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="First Name"
-            name="first_name"
-            value={formValues.first_name || ''}
-            onChange={handleInputChange}
-            fullWidth
-            margin="dense"
-          />
-          <TextField
-            label="Last Name"
-            name="last_name"
-            value={formValues.last_name || ''}
-            onChange={handleInputChange}
-            fullWidth
-            margin="dense"
-          />
-          <TextField
-            label="Date of Birth"
-            name="birthday"
-            value={formValues.birthday || ''}
-            onChange={handleInputChange}
-            fullWidth
-            margin="dense"
-          />
-          <TextField
-            label="Region"
-            name="city"
-            value={formValues.city || ''}
-            onChange={handleInputChange}
-            fullWidth
-            margin="dense"
-          />
-          <TextField
-            label="Sub City"
-            name="sub_city"
-            value={formValues.sub_city || ''}
-            onChange={handleInputChange}
-            fullWidth
-            margin="dense"
-          />
-          <TextField
-            label="ID Number"
-            name="id_number"
-            value={formValues.id_number || ''}
-            onChange={handleInputChange}
-            fullWidth
-            margin="dense"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleSaveChanges} color="primary" disabled={isSaving}>
-            {isSaving ? <CircularProgress size={24} /> : 'Save'}
-          </Button>
-          <Button onClick={handleDialogClose} color="secondary">Cancel</Button>
-        </DialogActions>
-      </Dialog>
+      </TableContainer>
+      <TablePagination
+        rowsPerPageOptions={[10, 25, 100]}
+        component="div"
+        count={students.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+    </Paper>
     </div>
   );
 };

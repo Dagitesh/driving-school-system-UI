@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Dashboard from './components/Dashboard'
 
 import StudentRegistration from './components/enrollment'
+import AppBarComponent from './components/AppBarComponent';
 
 function App() {
   
@@ -14,7 +15,7 @@ function App() {
      
       <Router>
       <div>
-        <h1>Driving School Management</h1>
+       <AppBarComponent/>
         
 
         <Routes>
